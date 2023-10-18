@@ -13,7 +13,7 @@ const upload = multer({ storage: storage });
 app.use(express.json());
 
 app.post('/upload', upload.single('csvFile'), (req, res) => {
-    
+
     if (!req.file) {
         return res.status(400).json({ error: 'Aucun fichier téléchargé.' });
     }
@@ -35,10 +35,12 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
         const columns = lines[i].split(';');
         const lastColumn = columns[columns.length - 1].trim();
 
-        if (lastColumn.includes('IBF FRANCE /MOTIF SALAIRE')) {
-            const amount = parseFloat(lastColumn.replace(/[^\d.-]/g, ''));
+        if (columns[3].includes('MOTIF SALAIRE')) {
+            const amount = columns[4];
             salaryTransactions.push({
                 date: columns[0],
+                type: columns[1],
+                compagny: columns[3].match(/\/DE\s+(.*?)\s*\/MOTIF/),
                 amount: amount,
             });
         }
