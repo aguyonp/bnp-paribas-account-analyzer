@@ -15,19 +15,18 @@ app.use(express.json());
 app.post('/upload', upload.single('csvFile'), (req, res) => {
 
     if (!req.file) {
-        return res.status(400).json({ error: 'Aucun fichier téléchargé.' });
+        return res.status(400).json({ error: 'No CSV File received' });
     }
 
     const lines = req.file.buffer.toString().split('\n').filter(line => line.trim() !== "");
 
     let balance = 0;
     const salaryTransactions = [];
+    const placementTransactions = [];
 
     // Extrait le solde du compte de la colonne 5 de la première ligne (ligne 0)
     const firstLine = lines[0].split(';');
-    if (firstLine.length >= 5) {
-        balance = parseFloat(firstLine[4].replace(/[\s,]/g, ''));
-    }
+    balance = firstLine[8];
 
     const transactions = [];
 
@@ -40,7 +39,17 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
             salaryTransactions.push({
                 date: columns[0],
                 type: columns[1],
-                compagny: columns[3].match(/\/DE\s+(.*?)\s*\/MOTIF/),
+                compagny: columns[3].match(/\/DE\s+(.*?)\s*\/MOTIF/)[1],
+                amount: amount,
+            });
+        }
+
+        if (columns[3].includes('VIR CPTE A CPTE EMIS')) {
+            const amount = columns[4];
+            placementTransactions.push({
+                date: columns[0],
+                type: columns[1],
+                to: columns[3].match(/\/BEN\s+(.*?)\s*\/REF/)[1],
                 amount: amount,
             });
         }
@@ -55,8 +64,9 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
     }
 
     const result = {
-        balance: balance.toFixed(2),
+        currentBalance: balance,
         salaryTransactions: salaryTransactions,
+        placementTransactions: placementTransactions,
         allTransactions: transactions,
     };
 
@@ -64,5 +74,5 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Le serveur est en cours d'exécution sur http://localhost:${port}`);
+    console.log(`Listen on port ${port}`);
 });
