@@ -34,23 +34,27 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
         const columns = lines[i].split(';');
         const lastColumn = columns[columns.length - 1].trim();
 
-        if (columns[3].includes('MOTIF SALAIRE')) {
-            const amount = columns[4];
-            salaryTransactions.push({
-                date: columns[0],
-                type: columns[1],
-                compagny: columns[3].match(/\/DE\s+(.*?)\s*\/MOTIF/)[1],
-                amount: amount,
-            });
-        }
+        switch (true) {
+            case columns[3].includes('MOTIF SALAIRE'):
+                salaryTransactions.push({
+                    date: columns[0],
+                    type: columns[1],
+                    compagny: columns[3].match(/\/DE\s+(.*?)\s*\/MOTIF/)[1],
+                    amount: columns[4],
+                });
+
+            case columns[3].includes('VIR CPTE A CPTE EMIS'):
+                console.log('notok');
+            default:
+                console.log("default");
+          }
 
         if (columns[3].includes('VIR CPTE A CPTE EMIS')) {
-            const amount = columns[4];
             placementTransactions.push({
                 date: columns[0],
                 type: columns[1],
                 to: columns[3].match(/\/BEN\s+(.*?)\s*\/REF/)[1],
-                amount: amount,
+                amount: columns[4],
             });
         }
 
